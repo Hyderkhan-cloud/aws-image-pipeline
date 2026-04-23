@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless Image Processing Pipeline
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.14
+    Environment:
+      Variables:
+        DYNAMODB_TABLE: !Ref ImageMetadataTable
+        S3_BUCKET: image-pipeline-images-c982f3aa
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,DELETE,OPTIONS'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+
+Resources:
+
+  ImageMetadataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: image-metadata
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: image_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: image_id
+          KeyType: HASH
+
+  ImageProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: image-processor
+      CodeUri: src/
+      Handler: handler.lambda_handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: image-pipeline-images-c982f3aa
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ImageMetadataTable
+
+  S3InvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ImageProcessorFunction
+      Principal: s3.amazonaws.com
+      SourceArn: arn:aws:s3:::image-pipeline-images-c982f3aa
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: image-api
+      CodeUri: src/
+      Handler: api.lambda_handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: image-pipeline-images-c982f3aa
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ImageMetadataTable
+      Events:
+        GetImages:
+          Type: Api
+          Properties:
+            Path: /images
+            Method: get
+        GetUploadUrl:
+          Type: Api
+          Properties:
+            Path: /upload-url
+            Method: get
+        DeleteImage:
+          Type: Api
+          Properties:
+            Path: /images/{id}
+            Method: delete
+        OptionsImages:
+          Type: Api
+          Properties:
+            Path: /images
+            Method: options
+        OptionsUpload:
+          Type: Api
+          Properties:
+            Path: /upload-url
+            Method: options
+        OptionsDelete:
+          Type: Api
+          Properties:
+            Path: /images/{id}
+            Method: options
+
+Outputs:
+  ApiUrl:
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod'
+  LambdaFunction:
+    Value: !Ref ImageProcessorFunction
+  DynamoDBTable:
+    Value: !Ref ImageMetadataTable
