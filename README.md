@@ -42,3 +42,27 @@ POST /upload
   "message": "uploaded",
   "url": "https://bucket-name.s3.region.amazonaws.com/file.jpg"
 }
+
+## 📁 Project Structure
+
+aws-image-pipeline/
+│
+├── frontend/           # Frontend application (React / UI)
+├── lambda/             # AWS Lambda function code
+│   ├── handler.py
+│   ├── api.py
+│   ├── requirements.txt
+│
+├── src/                # (Optional) additional scripts / configs
+│
+├── main.tf             # Main Terraform configuration
+├── lambda.tf           # Lambda resource definition
+├── iam.tf              # IAM roles & permissions
+├── cloudfront.tf       # CDN configuration (if used)
+├── monitoring.tf       # CloudWatch monitoring
+├── variables.tf        # Input variables
+├── outputs.tf          # Output values
+│
+├── template.yaml       # SAM template (optional)
+├── .gitignore
+├── README.md
