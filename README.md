@@ -38,7 +38,7 @@ POST /upload
 
 ## 📤 Sample Request
 
-```json
 {
-  "file": "BASE64_IMAGE_DATA"
+  "message": "uploaded",
+  "url": "https://bucket-name.s3.region.amazonaws.com/file.jpg"
 }
